@@ -19,29 +19,31 @@ namespace EShop.Repositries
             return await dbContext.SaveChangesAsync() > 0 ? true : false;
         }
 
+        public async Task<IEnumerable<object>> GetAllCategoriesAsync(CancellationToken cancellationToken)
+        {
+            return await dbContext.Categories.ToListAsync(cancellationToken);
+        }
+
         public async Task<IEnumerable<Category>> GetAllProductAsync(CancellationToken cancellationToken)
         {
             return await dbContext.Categories.ToListAsync();
         }
 
-        public Task<Category?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+        public async Task<Category?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            return await dbContext.Categories
+                .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
         }
 
-        public async Task<Category> GetProductByIdAsync(Guid id, CancellationToken cancellationToken)
+        public async  Task<bool> UpdateAsync(Category category, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            dbContext.Categories.Update(category);
+            return await dbContext.SaveChangesAsync(cancellationToken) > 0;
         }
 
-        public Task UpdateAsync(Category product, CancellationToken cancellationToken)
+        async Task<IEnumerable<Category>> ICategoryRepository.GetAllCategoriesAsync(CancellationToken cancellationToken)
         {
-            dbContext.Categories.Update();
-        }
-
-        Task<bool> ICategoryRepository.UpdateAsync(Category product, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
+            return await dbContext.Categories.ToListAsync(cancellationToken);
         }
     }
 }

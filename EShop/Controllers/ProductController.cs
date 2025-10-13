@@ -1,63 +1,79 @@
-﻿using EShop.Context;
+﻿using Azure.Core;
+using EShop.Context;
+using EShop.Dto.ProductModel;
+using EShop.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace EShop.Controllers
 {
+    [ApiController]
+    [Route("api/[controller]")]
     public class ProductController : ControllerBase
     {
-        private readonly ApplicationDbContext context;
+        private readonly IProductService _productService;
 
-        public ProductController(ApplicationDbContext DbContext)
+        public ProductController(IProductService productService)
         {
-            DbContext = DbContext;
+            _productService = productService;
         }
-        public async Task<ActionResult<IEnumerable<ProductController>>> GetProducts()
+
+        [HttpPost("create-product")]
+        public async Task<IActionResult> Create([FromBody] CreateProductDto request, CancellationToken cancellationToken)
         {
-            return await DbContext.Product
-                .Include(p => p.Category)
-                .ToListAsync();
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var result = await _productService.CreateAsync(request, cancellationToken);
+
+            if (!result.Status)
+                return BadRequest(result);
+
+            return Ok(result);
         }
-        public async Task<ActionResult<ProductController>> GetProducts(int id)
-        {
-            var product = await DbContext.Product
-                .Include(p => p.Category)
-                .FirstOrDefaultAsync(product => p.ProductID == id);
-            if (product == null)
-                return NotFound();
 
-            return product;
+        [HttpGet("get-all-prducts")]
+        public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+        {
+            var result = await _productService.GetAllAsync( cancellationToken);
+
+            if (!result.Status)
+                return BadRequest(result);
+
+            return Ok(result);
         }
-        public async Task<ActionResult<ProductController>> AddProducts(ProductController product)
-        {
-            DbContext.Products.Add(product);
-            await DbContext.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetProducts), new { id = product.ProductID }, product);
+        [HttpGet("get-product/{id:guid}")]
+        public async Task<IActionResult> GetById(Guid id, CancellationToken cancellationToken)
+        {
+            var result = await _productService.GetByIdAsync(id, cancellationToken);
+
+            if (!result.Status)
+                return NotFound(result);
+
+            return Ok(result);
         }
-        public async Task<IActionResult> UpdateProduct(int id, ProductController product)
-        {
-            if (id != product.ProductID)
-                return BadRequest();
-            DbContext.Entry(product).State = EntityState.Modified;
 
-            try
-            {
-                await DbContext.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!DbContext.Products.Any(p => p.ProductID == id))
-                    return NotFound();
-                else
-                    throw;
-            }
-
-            return NoContent();
-        }     
-        public async Task<IActionResult> DeleteProduct(int id)
+        [HttpPut("update-product/{id:guid}")]
+        public async Task<IActionResult> Update(Guid id, [FromBody] CreateProductDto request, CancellationToken cancellationToken)
         {
-            var product = await DbContext.Products
+            var result = await _productService.UpdateAsync(id, request, cancellationToken);
+
+            if (!result.Status)
+                return BadRequest(result);
+
+            return Ok(result);
+        }
+
+        [HttpDelete("delete-product/{id:guid}")]
+        public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+        {
+            var result = await _productService.DeleteAsync(id, cancellationToken);
+
+            if (!result.Status)
+                 return BadRequest(result);
+
+            return Ok(result);
         }
     }
 }

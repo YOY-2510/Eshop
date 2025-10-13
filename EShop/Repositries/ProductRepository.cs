@@ -13,7 +13,7 @@ namespace EShop.Repositries
             return await dbContext.SaveChangesAsync() > 0 ? true : false;
         }
 
-        public async Task<bool> DeletetAsync(Product product, CancellationToken cancellationToken)
+        public async Task<bool> DeleteAsync(Product product, CancellationToken cancellationToken)
         {
             dbContext.Remove(product);
             return await dbContext.SaveChangesAsync() > 0 ? true : false;
@@ -21,12 +21,12 @@ namespace EShop.Repositries
 
         public async Task<IEnumerable<Product>> GetAllAsync(CancellationToken cancellationToken)
         {
-            return await dbContext.Products.ToListAsync();
+            return await dbContext.Products.Include(p => p.Category).ToListAsync(cancellationToken);
         }
 
         async Task<Product?> IProductRepository.GetProductByIdAsync(Guid id, CancellationToken cancellationToken)
         {
-            return await dbContext.Products.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+            return await dbContext.Products.Include(p => p.Category).FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
         }
 
         public async Task<bool> UpdateAsync(Product product, CancellationToken cancellationToken)
@@ -38,11 +38,6 @@ namespace EShop.Repositries
         public async Task<IEnumerable<Product>> GetAllProductAsync(CancellationToken cancellationToken)
         {
             return await dbContext.Products.ToListAsync(cancellationToken);
-        }
-
-        public Task<bool> DeleteAsync(Product product, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
         }
     }
 }
