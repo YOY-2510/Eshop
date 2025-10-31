@@ -4,6 +4,7 @@ using EShop.Dto.ProductModel;
 using EShop.Dto.RoleModel;
 using EShop.Dto.UserModel;
 using EShop.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EShop.Controllers
@@ -16,6 +17,7 @@ namespace EShop.Controllers
         public RoleController(IRoleService roleService) 
             => _roleService = roleService;
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("create-roles")]
         public async Task<IActionResult> CreateRole([FromBody] CreateRoleDto dto, CancellationToken cancellationtoken)
         {
@@ -33,6 +35,7 @@ namespace EShop.Controllers
                 : BadRequest(result);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("delete-Role/{id:guid}")]
         public async Task<IActionResult> DeleteRole(Guid id, CancellationToken cancellationtoken)
         {

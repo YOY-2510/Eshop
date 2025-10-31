@@ -2,6 +2,7 @@
 using EShop.Context;
 using EShop.Dto.ProductModel;
 using EShop.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +10,7 @@ namespace EShop.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ProductController : ControllerBase
     {
         private readonly IProductService _productService;
@@ -18,6 +20,7 @@ namespace EShop.Controllers
             _productService = productService;
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("create-product")]
         public async Task<IActionResult> Create([FromBody] CreateProductDto request, CancellationToken cancellationToken)
         {
@@ -54,6 +57,7 @@ namespace EShop.Controllers
             return Ok(result);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("update-product/{id:guid}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] CreateProductDto request, CancellationToken cancellationToken)
         {
@@ -65,6 +69,7 @@ namespace EShop.Controllers
             return Ok(result);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("delete-product/{id:guid}")]
         public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
         {

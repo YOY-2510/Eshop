@@ -4,6 +4,7 @@ using EShop.Dto;
 using EShop.Dto.UserModel;
 using EShop.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EShop.Controllers
 {
@@ -15,6 +16,7 @@ namespace EShop.Controllers
         public UserController(IUserService userService) 
             => _userService = userService;
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("Create user")]
         public async Task<IActionResult> Create([FromBody] CreateUserDto dto, CancellationToken cancellationToken)
         {
@@ -59,6 +61,7 @@ namespace EShop.Controllers
                 : BadRequest(result);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("Update-user")]
         public async Task<IActionResult> UpdateUser([FromBody] User user, CancellationToken cancellationToken)
         {
@@ -67,6 +70,7 @@ namespace EShop.Controllers
                 : BadRequest(result);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("Delete-user/{id:guid}")]
         public async Task<IActionResult> DeleteUser(Guid id, CancellationToken cancellationToken)
         {
@@ -78,6 +82,7 @@ namespace EShop.Controllers
                 : BadRequest(result);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("Assign-role/{userId:guid}/{roleId:guid}")]
         public async Task<IActionResult> AssignRole(Guid userId, Guid roleId, CancellationToken cancellationToken)
         {

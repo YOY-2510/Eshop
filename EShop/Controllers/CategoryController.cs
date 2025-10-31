@@ -1,5 +1,6 @@
 ﻿using EShop.Dto.CategoryModel;
 using EShop.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EShop.Controllers
@@ -15,6 +16,7 @@ namespace EShop.Controllers
             _categoryService = categoryService;
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost("create-category")]
         public async Task<IActionResult> Create([FromBody] CreateCategoryDto request, CancellationToken cancellationToken)
         {
@@ -35,8 +37,8 @@ namespace EShop.Controllers
         {
             var result = await _categoryService.GetAllAsync(cancellationToken);
 
-            //if (!result.Status)
-            //    return NotFound(result);
+            if (!result.Status)
+                return NotFound(result);
 
             return Ok(result);
         }
@@ -52,6 +54,7 @@ namespace EShop.Controllers
             return Ok(result);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("update-category/{id:guid}")]
         public async Task<IActionResult> Update(Guid id, [FromBody] CreateCategoryDto request, CancellationToken cancellationToken)
         {
@@ -70,6 +73,7 @@ namespace EShop.Controllers
             return Ok(result);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpDelete("delete-category/{id:guid}")]
         public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
         {
