@@ -35,13 +35,13 @@ namespace EShop.Controllers
         {
             var result = await _categoryService.GetAllAsync(cancellationToken);
 
-            if (!result.Status)
-                return NotFound(result);
+            //if (!result.Status)
+            //    return NotFound(result);
 
             return Ok(result);
         }
 
-        [HttpGet("{id:guid}")]
+        [HttpGet("Get-Category/{id:guid}")]
         public async Task<IActionResult> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         {
             var result = await _categoryService.GetByIdAsync(id, cancellationToken);

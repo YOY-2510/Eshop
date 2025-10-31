@@ -1,5 +1,8 @@
-﻿namespace EShop.Data
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace EShop.Data
 {
+   // [Table("Products")]
     public class Product : BaseEntity
     {
         public string Name { get; set; } = string.Empty;

@@ -32,7 +32,7 @@ namespace EShop.Controllers
             return Ok(result);
         }
 
-        [HttpGet("get-all-prducts")]
+        [HttpGet("get-all-products")]
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
             var result = await _productService.GetAllAsync( cancellationToken);

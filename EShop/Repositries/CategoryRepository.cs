@@ -19,11 +19,6 @@ namespace EShop.Repositries
             return await dbContext.SaveChangesAsync() > 0 ? true : false;
         }
 
-        public async Task<IEnumerable<object>> GetAllCategoriesAsync(CancellationToken cancellationToken)
-        {
-            return await dbContext.Categories.ToListAsync(cancellationToken);
-        }
-
         public async Task<IEnumerable<Category>> GetAllProductAsync(CancellationToken cancellationToken)
         {
             return await dbContext.Categories.ToListAsync();
@@ -41,7 +36,7 @@ namespace EShop.Repositries
             return await dbContext.SaveChangesAsync(cancellationToken) > 0;
         }
 
-        async Task<IEnumerable<Category>> ICategoryRepository.GetAllCategoriesAsync(CancellationToken cancellationToken)
+        public async Task<IEnumerable<Category>> GetAllCategoriesAsync(CancellationToken cancellationToken)
         {
             return await dbContext.Categories.ToListAsync(cancellationToken);
         }
