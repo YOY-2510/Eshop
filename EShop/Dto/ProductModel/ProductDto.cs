@@ -8,8 +8,8 @@
         public decimal CostPrice { get; set; }
         public string Description { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
-        public DateTime? ExpiryDate { get; set; }
-        public DateTime DateCreated { get; set; }
+        public DateTime? ExpiryDate { get; set; } = DateTime.UtcNow;
+        public DateTime DateCreated { get; set; } = DateTime.UtcNow;
         public int StockQuantity { get; set; }
     }
 }

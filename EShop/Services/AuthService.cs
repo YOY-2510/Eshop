@@ -38,10 +38,10 @@ namespace EShop.Services
         {
             try
             {
-                var users = await _userRepository.GetAllAsync(cancellationToken);
-                var user = users.FirstOrDefault(u => u.Email == request.Email && u.PassWord == request.Password);
-
-                if (user == null)
+                var existingUser = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
+                //if (existingUser != null)
+                //    return BaseResponse<TokenResponse>.FailResponse("Email already registered.");
+                if (existingUser == null)
                     return BaseResponse<TokenResponse>.FailResponse("Invalid credentials.");
 
                 var userRoles = await _userroleRepository.GetAllAsync(cancellationToken);
@@ -54,14 +54,14 @@ namespace EShop.Services
                     if (role != null) roleName = role.Name;
                 }
 
-                var accessToken = GenerateJwtToken(user, roleName);
+                var accessToken = GenerateJwtToken(existingUser, roleName);
                 var refreshToken = GenerateRefreshToken();
 
                 var refreshTokenEntity = new RefreshToken()
                 {
                     Token = refreshToken,
                     Expires = DateTime.UtcNow.AddDays(7),
-                    UserId = user.Id,
+                    UserId = existingUser.Id,
                     CreatedByIp = "127.0.0.1"
                 };
 
@@ -88,7 +88,7 @@ namespace EShop.Services
                 var existingUser = (await _userRepository.GetAllAsync(cancellationToken))
                     .FirstOrDefault(u => u.Email == request.Email);
 
-                if (existingUser == null)
+                if (existingUser != null)
                     return BaseResponse<TokenResponse>.FailResponse("Email already registered.");
 
                 var newUser = new User

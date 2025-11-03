@@ -16,7 +16,7 @@ namespace EShop.Controllers
             _categoryService = categoryService;
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,User")]
         [HttpPost("create-category")]
         public async Task<IActionResult> Create([FromBody] CreateCategoryDto request, CancellationToken cancellationToken)
         {

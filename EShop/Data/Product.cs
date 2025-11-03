@@ -23,7 +23,7 @@ namespace EShop.Data
         public Guid CategoryId { get; set; }
         public Category? Category { get; set; }
 
-        public DateTime? ExpiryDate { get; set; }
+        public DateTime? ExpiryDate { get; set; } = DateTime.UtcNow;
 
         [Range(0,int.MaxValue)]
         public int StockQuantity { get; set; }

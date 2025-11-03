@@ -20,7 +20,7 @@ namespace EShop.Controllers
             _productService = productService;
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,User")]
         [HttpPost("create-product")]
         public async Task<IActionResult> Create([FromBody] CreateProductDto request, CancellationToken cancellationToken)
         {
