@@ -8,8 +8,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EShop.Controllers
 {
+    [Route("api/v{version:apiVersion}/[controller]")]
+    [ApiVersion("1.0")]
     [ApiController]
-    [Route("api/[controller]")]
     [Authorize]
     public class ProductController : ControllerBase
     {

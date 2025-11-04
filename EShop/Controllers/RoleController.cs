@@ -9,8 +9,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EShop.Controllers
 {
+    [Route("api/v{version:apiVersion}/[controller]")]
+    [ApiVersion("1.0")]
     [ApiController]
-    [Route("api/[controller]")]
     public class RoleController : ControllerBase
     {
         private readonly IRoleService _roleService;
