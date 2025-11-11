@@ -29,7 +29,13 @@ namespace EShop.Repositries
 
         public async Task<Role?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         {
-            return await _dbContext.Roles.FindAsync(new object[] { id }, cancellationToken);
+            return await _dbContext.Roles.FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+        }
+
+        public async Task<Role?> GetByNameAsync(string name, CancellationToken cancellationToken)
+        {
+            return await _dbContext.Roles
+               .FirstOrDefaultAsync(r => r.Name.ToLower() == name.ToLower(), cancellationToken);
         }
 
         public async Task<bool> UpdateAsync(Role role, CancellationToken cancellationToken)

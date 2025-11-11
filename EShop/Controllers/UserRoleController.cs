@@ -15,7 +15,6 @@ namespace EShop.Controllers
         public UserRoleController(IUserRoleService userRoleService)
             => _userRoleService = userRoleService;
 
-        [Authorize(Roles = "Admin")]
         [HttpPost("Assign-role")]
         public async Task<IActionResult> Assign([FromBody] AssignRoleDto dto, CancellationToken cancellationToken)
         {

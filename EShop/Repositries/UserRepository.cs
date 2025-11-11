@@ -22,8 +22,9 @@ namespace EShop.Repositries
         public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken)
         {
             return await _dbContext.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower(), cancellationToken);
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+              .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
         }
 
         public async Task<bool> DeleteAsync(User user, CancellationToken cancellationToken)

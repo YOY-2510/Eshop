@@ -1,12 +1,14 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace EShop.Data
 {
     [Table("Role")]
     public class Role : BaseEntity
     {
+        [JsonIgnore]
         [Required,MinLength(5),MaxLength(100)]
         public string? Description { get; set; } 
 

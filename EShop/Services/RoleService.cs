@@ -21,6 +21,11 @@ namespace EShop.Services
             { 
                 Log.Information("Creating Role with Name: {RoleName}", role.Name);
 
+                var exists = await _roleRepository.GetByNameAsync(role.Name, cancellationToken);
+
+                if (exists != null)
+                    return BaseResponse<Role>.FailResponse("Role already exists.");
+
                 var result = new Role { Name = role.Name, Description = role.Description };
                 var added = await _roleRepository.AddAsync(result, cancellationToken);
 

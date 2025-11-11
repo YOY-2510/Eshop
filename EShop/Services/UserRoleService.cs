@@ -24,23 +24,29 @@ namespace EShop.Services
         public async Task<BaseResponse<bool>> AssignRoleToUserAsync(Guid userId, Guid roleId, CancellationToken cancellationToken)
         {
             try
-            {
-                Log.Information("Assigning Role to User {UserId} {RoleId}", userId, roleId);
-
-                var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
+            {// Check if user exists
+                 var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
                 if (user == null)
                     return BaseResponse<bool>.FailResponse("User not found");
 
+                // Check if role exists
                 var role = await _roleRepository.GetByIdAsync(roleId, cancellationToken);
                 if (role == null)
                     return BaseResponse<bool>.FailResponse("Role not found");
 
-                var existing = await _userroleRepository.GetUserRoleAsync(userId, roleId, cancellationToken);
+                // Check if this user already has that role
+                var existing = await _userroleRepository.GetByUserIdAndRoleIdAsync(userId, roleId, cancellationToken);
                 if (existing != null)
-                    return BaseResponse<bool>.FailResponse("Role Already Assigned");
+                    return BaseResponse<bool>.FailResponse("User already has this role");
 
-                var result = await _userroleRepository.AddAsync(new UserRole { UserId = userId, RoleId = roleId }, cancellationToken);
-                return result ? BaseResponse<bool>.SuccessResponse(true, "Role assigned successfully")
+                var added = await _userroleRepository.AddAsync(new UserRole
+                {
+                    UserId = userId,
+                    RoleId = roleId
+                }, cancellationToken);
+
+                return added
+                    ? BaseResponse<bool>.SuccessResponse(true, "Role assigned successfully")
                     : BaseResponse<bool>.FailResponse("Failed to assign role");
             }
             catch (Exception ex)
@@ -49,6 +55,15 @@ namespace EShop.Services
                 return BaseResponse<bool>.FailResponse($"Error: {ex.Message}");
             }
         }
+
+        //public async Task<BaseResponse<bool>> AssignRoleToUserAsync(UserRole userRole, CancellationToken cancellationToken)
+        //{
+        //    var result = await _userroleRepository.AddAsync(userRole, cancellationToken);
+
+        //    return result
+        //        ? BaseResponse<bool>.SuccessResponse(true, "Role assigned")
+        //        : BaseResponse<bool>.FailResponse("Failed to assign role");
+        //}
 
         public async Task<BaseResponse<bool>> DeleteUserRoleAsync(Guid userId, Guid roleId, CancellationToken cancellationToken)
         {

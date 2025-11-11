@@ -1,14 +1,9 @@
-﻿using Azure.Core;
-using EShop.Context;
-using EShop.Data;
+﻿using EShop.Data;
 using EShop.Dto;
 using EShop.Dto.UserModel;
 using EShop.Repositries.Interface;
 using EShop.Services.Interface;
-using Microsoft.EntityFrameworkCore;
 using Serilog;
-using System.Data;
-using System.Threading;
 
 namespace EShop.Services
 {
@@ -25,17 +20,36 @@ namespace EShop.Services
             _roleRepository = roleRepository;
         }
 
-        public async Task<BaseResponse<bool>> AddUserAsync(User user, CancellationToken cancellationToken)
+        public async Task<BaseResponse<bool>> AddUserAsync(CreateUserDto dto, CancellationToken cancellationToken)
         {
             try
             {
-                Log.Information("Creating User with details {User}", user);
+                Log.Information("Creating User with details {User}", dto);
 
-                if (string.IsNullOrWhiteSpace(user.UserName) || string.IsNullOrWhiteSpace(user.Email) || string.IsNullOrWhiteSpace(user.PassWord))
+                if (string.IsNullOrWhiteSpace(dto.UserName) || string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Password))
                     return BaseResponse<bool>.FailResponse("UserName, Email and Password are required.");
 
-                Log.Information("Creating user {UserName}", user.UserName);
+                var existingUser = (await _userRepository.GetAllAsync(cancellationToken))
+                       .FirstOrDefault(u => u.Email == dto.Email);
+
+                if (existingUser != null)
+                    return BaseResponse<bool>.FailResponse("Email already registered.");
+
+                Log.Information("Creating user {UserName}", dto.UserName);
+
+                var user = new User()
+                {
+                    UserName = dto.UserName,
+                    Email = dto.Email,
+                    PassWord = dto.Password,
+                    PhoneNumber = dto.PhoneNumber,
+                    Gender = dto.Gender,
+                    Address = dto.Address
+                };
+
+                Log.Information("Saving user {UserName}", user.UserName);
                 var result = await _userRepository.AddAsync(user, cancellationToken);
+
                 return result ? BaseResponse<bool>.SuccessResponse(true, "User created successfully.")
                     : BaseResponse<bool>.FailResponse("Failed to create user.");
             }
@@ -58,7 +72,7 @@ namespace EShop.Services
                 var role = await _roleRepository.GetByIdAsync(roleId, cancellationToken);
                 if (role == null) return BaseResponse<bool>.FailResponse("Role not found");
 
-                var existing = await _userRoleRepository.GetUserRoleAsync(userId, roleId, cancellationToken);
+                var existing = await _userRoleRepository.GetByUserIdAndRoleIdAsync(userId, roleId, cancellationToken);
                 if (existing != null) return BaseResponse<bool>.FailResponse("User already has this role");
 
                 var ur = new UserRole { UserId = userId, RoleId = roleId };

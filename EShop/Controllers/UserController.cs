@@ -17,31 +17,10 @@ namespace EShop.Controllers
         public UserController(IUserService userService) 
             => _userService = userService;
 
-        [Authorize(Roles = "Admin")]
         [HttpPost("Create user")]
         public async Task<IActionResult> Create([FromBody] CreateUserDto dto, CancellationToken cancellationToken)
         {
-            if (dto == null)
-                return BadRequest(BaseResponse<bool>.FailResponse("Invalid input"));
-
-            var user = new User()
-            {
-                UserName = dto.UserName,
-                Email = dto.Email,
-                PassWord = dto.Password,
-                PhoneNumber = dto.PhoneNumber, 
-                Gender = dto.Gender,
-                Address = dto.Address
-            };
-
-            var result = await _userService.AddUserAsync(user, cancellationToken);
-
-            if (result.Status && dto.RoleIds != null)
-            {
-                foreach (var roleId in dto.RoleIds)
-                    await _userService.AssignRoleAsync(user.Id, roleId, cancellationToken);
-            }
-
+            var result = await _userService.AddUserAsync(dto, cancellationToken);
             return result.Status ? Ok(result)
                 : BadRequest(result);
         }
@@ -83,7 +62,6 @@ namespace EShop.Controllers
                 : BadRequest(result);
         }
 
-        [Authorize(Roles = "Admin")]
         [HttpPost("Assign-role/{userId:guid}/{roleId:guid}")]
         public async Task<IActionResult> AssignRole(Guid userId, Guid roleId, CancellationToken cancellationToken)
         {

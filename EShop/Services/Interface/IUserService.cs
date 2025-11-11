@@ -7,7 +7,7 @@ namespace EShop.Services.Interface
 {
     public interface IUserService
     {
-        Task<BaseResponse<bool>> AddUserAsync(User user, CancellationToken cancellationToken);
+        Task<BaseResponse<bool>> AddUserAsync(CreateUserDto dto, CancellationToken cancellationToken);
         Task<BaseResponse<bool>> UpdateUserAsync(User user, CancellationToken cancellationToken);
         Task<BaseResponse<User?>> GetByIdAsync(Guid id, CancellationToken cancellationToken);
         Task<BaseResponse<IEnumerable<User>>> GetAllAsync(CancellationToken cancellationToken);

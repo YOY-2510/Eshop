@@ -1,5 +1,6 @@
+using EShop;
 using EShop.Context;
-using EShop.Controllers;
+using EShop.Data;
 using EShop.Repositries;
 using EShop.Repositries.Interface;
 using EShop.Services;
@@ -97,6 +98,8 @@ builder.Services.AddApiVersioning(options =>
     );
 });
 
+
+
 // Register Repositories
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
@@ -112,6 +115,10 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserRoleService, UserRoleService>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+// CLOUDINARY CONFIG
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
+builder.Services.AddSingleton<ICloudinaryService, CloudinaryService>();
 
 // Add Swagger for API documentation
 builder.Services.AddEndpointsApiExplorer();
@@ -152,6 +159,13 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+// RUN SEEDER
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await DataSeeder.SeedAsync(dbContext);
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
