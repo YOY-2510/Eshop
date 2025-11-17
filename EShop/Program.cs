@@ -1,3 +1,4 @@
+using CloudinaryDotNet;
 using EShop;
 using EShop.Context;
 using EShop.Data;
@@ -11,6 +12,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -18,46 +20,15 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Information()
-    .WriteTo.Console()
-    .WriteTo.File("Logs/EShop_log.txt", rollingInterval: RollingInterval.Day)
-    .CreateLogger();
-
-builder.Host.UseSerilog();
-
-// Add services to the container.
-builder.Services.AddControllers();
-builder.Services.AddFluentValidationAutoValidation();
-builder.Services.Configure<ApiBehaviorOptions>(options =>
-{
-    options.InvalidModelStateResponseFactory = context =>
-    {
-        var errors = context.ModelState
-            .Where(x => x.Value?.Errors.Count > 0)
-            .ToDictionary(
-                kvp => kvp.Key,
-                kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
-            );
-
-        return new BadRequestObjectResult(new
-        {
-            status = false,
-            message = "Validation failed.",
-            errors
-        });
-    };
-});
-builder.Services.AddValidatorsFromAssemblyContaining<Program>();
-
-// Configure EF Core to use SQL Server
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
 //Configure JWT Core
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
 
+builder.Services.AddControllers();
+
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+builder.Services.AddFluentValidationAutoValidation();
 
 builder.Services.AddAuthentication(options =>
 {
@@ -98,27 +69,17 @@ builder.Services.AddApiVersioning(options =>
     );
 });
 
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .WriteTo.Console()
+    .WriteTo.File("Logs/EShop_log.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
 
+builder.Host.UseSerilog();
 
-// Register Repositories
-builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
-builder.Services.AddScoped<IRoleRepository, RoleRepository>();
-builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
-
-// Register Services
-builder.Services.AddScoped<ICategoryService, CategoryService>();
-builder.Services.AddScoped<IProductService, ProductService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IUserRoleService, UserRoleService>();
-builder.Services.AddScoped<IRoleService, RoleService>();
-builder.Services.AddScoped<IAuthService, AuthService>();
-
-// CLOUDINARY CONFIG
-builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
-builder.Services.AddSingleton<ICloudinaryService, CloudinaryService>();
+// Configure EF Core to use SQL Server
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add Swagger for API documentation
 builder.Services.AddEndpointsApiExplorer();
@@ -158,20 +119,99 @@ builder.Services.AddSwaggerGen(c =>
   });
 });
 
-var app = builder.Build();
-
-// RUN SEEDER
-using (var scope = app.Services.CreateScope())
+builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    await DataSeeder.SeedAsync(dbContext);
-}
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var errors = context.ModelState
+            .Where(x => x.Value?.Errors.Count > 0)
+            .ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
+            );
+
+        return new BadRequestObjectResult(new
+        {
+            status = false,
+            message = "Validation failed.",
+            errors
+        });
+    };
+});
+
+// Register Repositories
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+
+// Add Cloudinary settings
+builder.Services.Configure<CloudinarySettings>(
+    builder.Configuration.GetSection("CloudinarySettings")
+);
+
+// Register Cloudinary correctly
+builder.Services.AddSingleton(sp =>
+{
+    var config = sp.GetRequiredService<IOptions<CloudinarySettings>>().Value;
+
+    if (string.IsNullOrWhiteSpace(config.CloudName) ||
+        string.IsNullOrWhiteSpace(config.ApiKey) ||
+        string.IsNullOrWhiteSpace(config.ApiSecret))
+    {
+        throw new ArgumentException("Cloudinary configuration is missing!! Check CloudinarySettings in appsettings.json");
+    }
+
+    var account = new Account(
+        config.CloudName,
+        config.ApiKey,
+        config.ApiSecret
+    );
+
+    return new Cloudinary(account);
+
+});
+
+//builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
+
+//builder.Services.AddSingleton(sp =>
+//{
+//    var config = sp.GetRequiredService<IOptions<CloudinarySettings>>().Value;
+
+//    var acc = new Account(
+//        config.CloudName, 
+//        config.ApiKey, 
+//        config.ApiSecret
+//    );
+
+//    return new Cloudinary(acc);
+//});
+
+// Register Services
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUserRoleService, UserRoleService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<CloudinaryService>();
+
+var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+
+// RUN SEEDER
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    await DataSeeder.SeedAsync(dbContext);
 }
 
 app.UseHttpsRedirection();

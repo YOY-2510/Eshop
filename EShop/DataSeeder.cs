@@ -1,62 +1,74 @@
 ﻿using EShop.Context;
 using EShop.Data;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 namespace EShop
 {
-    public class DataSeeder
+    public static class DataSeeder
     {
         public static async Task SeedAsync(ApplicationDbContext context)
         {
-            await context.Database.MigrateAsync();
-
-            var adminRole = await context.Roles
-                .FirstOrDefaultAsync(r => r.Name == "Admin");
-
-            if (adminRole == null)
+            try
             {
-                adminRole = new Role
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "Admin",
-                    Description = "Default admin role"
-                };
+                await context.Database.MigrateAsync();
 
-                await context.Roles.AddAsync(adminRole);
-                await context.SaveChangesAsync();
+                Log.Information("Starting data seeding...");
+
+                if (!await context.Roles.AnyAsync())
+                {
+                    var roles = new List<Role>
+                    {
+                        new Role { Id = Guid.NewGuid(), Name = "Admin", Description = "Administrator role"},
+                        new Role { Id = Guid.NewGuid(), Name = "User", Description = "Administrator role"}
+                    };
+
+                    await context.Roles.AddRangeAsync(roles);
+                    await context.SaveChangesAsync();
+
+                    Log.Information("Default roles seeded.");
+                }
+
+                if (!await context.Users.AnyAsync(u => u.Email == "yoyo2510@gmail.com"))
+                {
+                    var adminUser = new User
+                    {
+                        Id = Guid.NewGuid(),
+                        UserName = "yoyo",
+                        Email = "yoyo2510@gmail.com",
+                        PassWord = "yoyo2008",
+                        PhoneNumber = "08012345678",
+                        Address = "System Default",
+                        Gender = Gender.Male,
+                    };
+
+                    await context.Users.AddAsync(adminUser);
+                    await context.SaveChangesAsync();
+
+                    Log.Information("Default Admin user created.");
+
+                    var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == "Admin");
+                    if (adminRole != null)
+                    {
+                        var userRole = new UserRole
+                        {
+                            Id = Guid.NewGuid(),
+                            UserId = adminUser.Id,
+                            RoleId = adminRole.Id
+                        };
+
+                        await context.UserRoles.AddAsync(userRole);
+                        await context.SaveChangesAsync();
+                        Log.Information("Admin role assigned to default admin user.");
+                    }
+                }
+
+                Log.Information("Data seeding completed successfully.");
             }
-
-            var adminUser = await context.Users
-                .FirstOrDefaultAsync(u => u.Email == "Justdeyplay@gmail.com");
-
-            if (adminUser == null)
+            catch (Exception ex)
             {
-                adminUser = new User
-                {
-                    Id = Guid.NewGuid(),
-                    UserName = "Admin",
-                    Email = "AseebPaulo@gmail.com",
-                    PassWord = "050310"
-                };
-
-                await context.Users.AddAsync(adminUser);
-                await context.SaveChangesAsync();
-            }
-
-            var userRole = await context.UserRoles
-                .FirstOrDefaultAsync(ur => ur.UserId == adminUser.Id && ur.RoleId == adminRole.Id);
-
-            if (userRole == null)
-            {
-                userRole = new UserRole
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = adminUser.Id,
-                    RoleId = adminRole.Id
-                };
-
-                await context.UserRoles.AddAsync(userRole);
-                await context.SaveChangesAsync();
+                Log.Error(ex, "An error occurred during data seeding.");
+                throw;
             }
         }
     }

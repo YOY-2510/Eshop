@@ -6,14 +6,13 @@ using Microsoft.Extensions.Options;
 
 namespace EShop.Services
 {
-    public class CloudinaryService : ICloudinaryService
+    public class CloudinaryService 
     {
-        private readonly Cloudinary _client;
+        private readonly Cloudinary _cloudinary;
 
-        public CloudinaryService(IOptions<CloudinarySettings> settings)
+        public CloudinaryService(Cloudinary cloudinary)
         {
-            var cfg = settings.Value;
-            _client = new Cloudinary(new Account(cfg.CloudName, cfg.ApiKey, cfg.ApiSecret));
+            _cloudinary = cloudinary;
         }
 
         public async Task<string?> UploadImageAsync(IFormFile file, CancellationToken cancellationToken)
@@ -26,14 +25,14 @@ namespace EShop.Services
                 File = new FileDescription(file.FileName, stream),
                 Folder = "eshop"
             };
-            var result = await _client.UploadAsync(uploadParams, cancellationToken);
+            var result = await _cloudinary.UploadAsync(uploadParams, cancellationToken);
             return result.StatusCode == System.Net.HttpStatusCode.OK ? result.SecureUrl.ToString() : null;
         }
 
         public async Task<bool> DeleteImageAsync(string publicId, CancellationToken cancellationToken)
         {
             var deletionParams = new DeletionParams(publicId);
-            var result = await _client.DestroyAsync(deletionParams);
+            var result = await _cloudinary.DestroyAsync(deletionParams);
             return result.Result == "ok" || result.Result == "not found";
         }
     }

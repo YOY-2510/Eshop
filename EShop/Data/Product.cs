@@ -17,9 +17,6 @@ namespace EShop.Data
 
         [Required,MinLength(3), MaxLength(100)]
         public string Description { get; set; } = string.Empty;
-
-        [Required]
-        [ForeignKey("Category")]
         public Guid CategoryId { get; set; }
         public Category? Category { get; set; }
 
@@ -27,5 +24,6 @@ namespace EShop.Data
 
         [Range(0,int.MaxValue)]
         public int StockQuantity { get; set; }
+        public string? ImageUrl { get; set; }
     }
 }

@@ -9,5 +9,6 @@
         public int StockQuantiy { get; set; }
         public decimal SellingPrice {get; set; }
         public DateTime? ExpiryDate { get; set; }
+        public IFormFile? ImageFile { get; set; }
     }
 }

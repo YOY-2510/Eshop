@@ -11,5 +11,6 @@
         public DateTime? ExpiryDate { get; set; } = DateTime.UtcNow;
         public DateTime DateCreated { get; set; } = DateTime.UtcNow;
         public int StockQuantity { get; set; }
+        public IFormFile? ImageFile { get; set; }
     }
 }

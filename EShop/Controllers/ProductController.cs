@@ -1,6 +1,7 @@
 ﻿using Azure.Core;
 using EShop.Context;
 using EShop.Dto.ProductModel;
+using EShop.Services;
 using EShop.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,16 +16,19 @@ namespace EShop.Controllers
     public class ProductController : ControllerBase
     {
         private readonly IProductService _productService;
+        private readonly CloudinaryService _cloudinaryService;
 
-        public ProductController(IProductService productService)
+        public ProductController(IProductService productService, CloudinaryService cloudinaryService)
         {
             _productService = productService;
+            _cloudinaryService = cloudinaryService;
         }
 
         [Authorize(Roles = "Admin,User")]
         [HttpPost("create-product")]
-        public async Task<IActionResult> Create([FromBody] CreateProductDto request, CancellationToken cancellationToken)
+        public async Task<IActionResult> Create([FromForm] CreateProductDto request, CancellationToken cancellationToken)
         {
+
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 

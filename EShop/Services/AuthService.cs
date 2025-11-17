@@ -1,12 +1,9 @@
 ﻿using EShop.Data;
 using EShop.Dto;
 using EShop.Dto.AuthModel;
-using EShop.Repositries;
 using EShop.Repositries.Interface;
 using EShop.Services.Interface;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -46,27 +43,17 @@ namespace EShop.Services
                 if (existingUser.PassWord.Trim() != request.Password.Trim())
                     return BaseResponse<TokenResponse>.FailResponse("Invalid credentials.");
 
-                var userRoles = await _userroleRepository.GetRolesByUserIdAsync(existingUser.Id, cancellationToken);
-                var roleName = userRoles.FirstOrDefault();
-                //if (userRoles == null)
-                //    return BaseResponse<TokenResponse>.FailResponse("User has no role assigned.");
-                //var ur = userRoles.FirstOrDefault(x => x.UserId == existingUser.Id);
+                var roleEntities = await _userroleRepository.GetRolesByUserIdAsync(existingUser.Id, cancellationToken);
+                var roles = roleEntities.Select(r => r.Name).ToList();
+                var accessToken = GenerateJwtToken(existingUser, roles);
+                //var userRoles = await _userroleRepository.GetRolesByUserIdAsync(existingUser.Id, cancellationToken);
+                ////var roleName = userRoles.FirstOrDefault();
 
-                //var role = await _roleRepository.GetByIdAsync(userRoles.roleId, cancellationToken);
-                //if (role == null)
-                //    return BaseResponse<TokenResponse>.FailResponse("Assigned role not found.");
-                //var roleName = "User";
-                //if (ur != null)
-                //{
-                //    var role = await _roleRepository.GetByIdAsync(ur.RoleId, cancellationToken);
-                //    if (role != null) roleName = role.Name;
-                //}
-
-                var accessToken = GenerateJwtToken(existingUser);
+                //var accessToken = GenerateJwtToken(existingUser, userRoles);
                 var refreshToken = GenerateRefreshToken();
 
                 var refreshTokenEntity = new RefreshToken()
-                {
+                { 
                     Token = refreshToken,
                     Expires = DateTime.UtcNow.AddDays(7),
                     UserId = existingUser.Id,
@@ -94,8 +81,6 @@ namespace EShop.Services
             try
             {
                 var existingUser = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
-                //.FirstOrDefault(u => u.Email == request.Email);
-
                 if (existingUser != null)
                     return BaseResponse<TokenResponse>.FailResponse("Email already registered.");
 
@@ -111,8 +96,6 @@ namespace EShop.Services
                     return BaseResponse<TokenResponse>.FailResponse("Failed to save user.");
 
                 var role = await _roleRepository.GetByNameAsync(request.RoleName, cancellationToken);
-                //.FirstOrDefault(r => r.Name.ToLower() == request.RoleName.ToLower());
-
                 if (role == null)
                     return BaseResponse<TokenResponse>.FailResponse($"Role '{request.RoleName}' not found.");
 
@@ -123,7 +106,7 @@ namespace EShop.Services
                 };
                 await _userroleRepository.AddAsync(userRole, cancellationToken);
 
-                var accesstoken = GenerateJwtToken(newUser);
+                var accesstoken = GenerateJwtToken(newUser, new List<string> { role.Name });
                 var refreshToken = GenerateRefreshToken();
 
                 var refreshTokenEntity = new RefreshToken
@@ -161,18 +144,14 @@ namespace EShop.Services
                 if (user == null)
                     return BaseResponse<TokenResponse>.FailResponse("User not found.");
 
-                var userRoles = await _userroleRepository.GetUsersByRoleIdAsync(user.Id, cancellationToken);
-                var roleName = await _roleRepository.GetByIdAsync(user.Id, cancellationToken);
-                //var ur = userRoles.FirstOrDefault(x => x.UserId == user.Id);
-                //var roleName = "User";
+                var roleEntities = await _userroleRepository.GetRolesByUserIdAsync(user.Id, cancellationToken);
+                var roles = roleEntities.Select(r => r.Name).ToList();
+                var newAccessToken = GenerateJwtToken(user, roles);
 
-                //if (ur != null)
-                //{
-                //    var role = await _roleRepository.GetByIdAsync(ur.RoleId, cancellationToken);
-                //    if (role != null) roleName = role.Name;
-                //}
+                //var userRoles = await _userroleRepository.GetRolesByUserIdAsync(user.Id, cancellationToken);
+                ////var roleName = await _roleRepository.GetByIdAsync(user.Id, cancellationToken);
 
-                var newAccessToken = GenerateJwtToken(user);
+                //var newAccessToken = GenerateJwtToken(user, userRoles);
                 var newRefreshToken = GenerateRefreshToken();
 
                 storedToken.Token = newRefreshToken;
@@ -192,22 +171,25 @@ namespace EShop.Services
             }
         }
 
-        private string GenerateJwtToken(User user)
+        private string GenerateJwtToken(User user, List<string> roles)
         {
             var jwtSettings = _configuration.GetSection("Jwt");
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var claims = new[]
+            var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                 new Claim("UserId", user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
-            foreach (var claim in user.UserRoles)
+            if (roles != null)
             {
-                new Claim(ClaimTypes.Role, claim.Role.Name);
+                foreach (var role in roles)
+                {
+                    claims.Add(new Claim(ClaimTypes.Role, role));
+                }
             }
 
             var token = new JwtSecurityToken(

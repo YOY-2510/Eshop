@@ -10,15 +10,8 @@ using Serilog;
 
 namespace EShop.Services
 {
-    public class ProductService : IProductService
+    public class ProductService(IProductRepository _productRepository, CloudinaryService cloudinaryService) : IProductService
     {
-        private readonly IProductRepository _productRepository;
-
-        public ProductService(IProductRepository productRepository)
-        {
-            _productRepository = productRepository;
-        }
-
         public async Task<BaseResponse<bool>> CreateAsync(CreateProductDto request, CancellationToken cancellationToken)
         {
             try
@@ -33,8 +26,16 @@ namespace EShop.Services
                     SellingPrice = request.SellingPrice,
                     CostPrice = request.CostPrice,
                     StockQuantity = request.StockQuantiy,
-                    CategoryId = request.CategoryId
+                    CategoryId = request.CategoryId,
+                    CreatedAt = DateTime.UtcNow,
                 };
+
+                if (request.ImageFile != null)
+                {
+                    var imageUrl = await cloudinaryService.UploadImageAsync(request.ImageFile, cancellationToken);
+                    product.ImageUrl = imageUrl;
+                }
+
                 var result = await _productRepository.AddAsync(product, CancellationToken.None);
 
                 if (!result)
